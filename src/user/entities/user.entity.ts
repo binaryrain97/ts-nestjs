@@ -1,6 +1,7 @@
-import { BeforeInsert, Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 import * as bcrypt from 'bcrypt';
+import { Board } from "src/board/entities/board.entity";
 
 @Entity({name: 'user'})
 export class UserEntity {
@@ -15,6 +16,9 @@ export class UserEntity {
 
     @Column()
     nickname: string;
+
+    @OneToMany(() => Board, board => board.author)
+    boards: Board[];
 
     @CreateDateColumn()
     created_at: Date;

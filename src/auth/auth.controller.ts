@@ -1,34 +1,33 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { UserService } from 'src/user/user.service';
+import { JwtService } from '@nestjs/jwt';
+import { AuthDTO } from './dto/authDto';
 
-@Controller('auth')
+import * as bcrypt from 'bcrypt';
+
+@Controller()
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
-
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.authService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  constructor(
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService
+  ) {}
+  
+  @Post("/signin")
+  async signin(@Body() authDTO: AuthDTO.SignIn) {
+    const {email, password} = authDTO;
+    const user = await this.userService.findByEmail(email);
+    if(!user) {
+      throw new UnauthorizedException("이메일 확인");
+    }
+    const isSamePassword = bcrypt.compareSync(password, user.password);
+    if(!isSamePassword) {
+      throw new UnauthorizedException("비밀번호 확인");
+    }
+    const payload = {id: user.id}
+    const accessToken = this.jwtService.sign(payload);
+    console.log(email, password);
+    console.log(accessToken);
+    return accessToken;
   }
 }
